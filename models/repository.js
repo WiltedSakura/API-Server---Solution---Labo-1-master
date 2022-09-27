@@ -179,8 +179,12 @@ class Repository {
           filteredAndSortedObjects.push(object);
       }
       // todo sort
-      filteredAndSortedObjects = this.order(filteredAndSortedObjects, sortKeys);
-      return filteredAndSortedObjects;
+      if (sortKeys.length > 0)
+                if(searchKeys.length > 0)
+                    filteredAndSortedObjects = this.order(filteredAndSortedObjects, sortKeys);
+                else
+                    filteredAndSortedObjects = this.order(objectsList, sortKeys);
+            return filteredAndSortedObjects;
     }
     return objectsList;
   }
@@ -226,14 +230,34 @@ class Repository {
       return false;
     }
   }
+
+
   compareNum(x, y) {
     if (x === y) return 0;
     else if (x < y) return -1;
     return 1;
   }
   innerCompare(x, y) {
-    if (typeof x === "string") return x.localeCompare(y);
-    else return this.compareNum(x, y);
+    if ((typeof x) === 'string')
+      return x.localeCompare(y);
+    else
+      return this.compareNum(x, y);
+  }
+  compare(itemX, itemY) {
+    let fieldIndex = 0;
+    let max = this.sortFields.length;
+    do {
+      let result = 0;
+      if (this.sortFields[fieldIndex].asc)
+        result = this.innerCompare(itemX[this.sortFields[fieldIndex].key], itemY[this.sortFields[fieldIndex].key]);
+      else
+        result = this.innerCompare(itemY[this.sortFields[fieldIndex].key], itemX[this.sortFields[fieldIndex].key]);
+      if (result == 0)
+        fieldIndex++;
+      else
+        return result;
+    } while (fieldIndex < max);
+    return 0;
   }
   filter(object, searchKeys) {
     for (let searchKey of searchKeys) {
@@ -243,14 +267,16 @@ class Repository {
     }
     return true;
   }
-  order(objects, sortKeys) {
-    //for (let sortKey of sortKeys) {
-    objects.sort((a, b) => {
-      return this.innerCompare(a[sortKeys[0].key], b[sortKeys[0].key]);
-    });
-    //}
-    return objects;
-  }
+  order(objects, sortKeys)
+    {
+         this.sortFields = sortKeys;
+         let ObjectsOrdered = [...objects].sort((a, b) => {
+            return this.compare(a[sortKeys[0].key], b[sortKeys[0].key]);
+        });
+        return ObjectsOrdered;
+    }
 }
+
+
 
 module.exports = Repository;
